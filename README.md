@@ -140,7 +140,7 @@
         + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d(string, required) - アクセストークン
 
 
-### ユーザーのプロフィール取得 - /api/check_token/\<string:user_id> [POST]
+### ユーザーのプロフィール取得 - /api/check_token/\<string:user_id> [GET]
 #### 処理概要
 
 * 指定されたuser_idに該当するもののうちプロフィールとして表示できるものに限り取得。
@@ -165,3 +165,21 @@
         + name: hogehoge (string) - ユーザー名
         + bio: example-user (string) - ユーザー概要
         + link: https://example.com (string) - 関連リンク (format: url)
+
+### ユーザーのプロフィールアイコン取得 - /api/get_icon/\<string:user_id> [GET]
+#### 処理概要
+
+* 指定されたuser_idに該当するユーザーからアイコンのバイナリを取得。
+* 成功した場合、アイコンのバイナリを返す。
+
++ Request (application/json)
+
+    + Headers
+
+            Accept: application/json
+
+    + Attributes
+
++ Response 201 (application/json)
+    + Attributes
+        + [image] (binary) - プロフィールアイコン画像
