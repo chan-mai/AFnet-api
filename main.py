@@ -302,5 +302,20 @@ def delete_account(user_id=None):
         print(e)
         return ReturnJson.err('内部でエラーが発生しました。')
 
+# トークン認証
+@app.route('/api/check_token/<string:user_id>', methods=['POST'])
+def auth(user_id=None):
+    if(user_id == None):
+        return ReturnJson.err('URLが不正です。')
+
+    # tokenの確認
+    token = request.form.get('token')
+    if token == None:
+        return ReturnJson.err('トークンが不正です。')
+    if Token.check(user_id, token) == False:
+        return ReturnJson.err('トークンが不正です。')
+
+    return ReturnJson.ok('トークンの有効性が認められました。', {'user_id': user_id, 'token': token})
+
 if __name__ == "__main__":
     app.run(debug=True, host='127.0.0.1', port=5000)
