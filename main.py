@@ -153,7 +153,7 @@ def get_user_data(user_id=None):
         if result[0]["user_id"] == None:
             return ReturnJson.err('このユーザーIDは登録されていません。')
         else:
-            return ReturnJson.ok('取得が完了しました。', {'user_id': result[0]["user_id"], 'name': result[0]["name"], 'email': result[0]["email"], 'icon': result[0]["icon"], 'bio': result[0]["bio"], 'link': result[0]["link"]})
+            return ReturnJson.ok('取得が完了しました。', {'user_id': result[0]["user_id"], 'name': result[0]["name"], 'icon': result[0]["icon"], 'bio': result[0]["bio"], 'link': result[0]["link"]})
     
     except Exception as e:
         print(e)
@@ -191,6 +191,7 @@ def update_user_data(user_id=None):
             return ReturnJson.err('このユーザーは登録されていません。')
         else:
             name = result[0]["name"]
+            name = result[0]["password"]
             email = result[0]["email"]
             icon = result[0]["icon"]
             bio = result[0]["bio"]
@@ -228,6 +229,10 @@ def update_user_data(user_id=None):
             print(e)
             return ReturnJson.err('内部でエラーが発生しました。')
         email = request.form.get('email')
+    if(request.form.get('password') != None):
+        _password = request.form.get('password')
+        # ハッシュ化
+        password = hashlib.sha256(_password.encode()).hexdigest()
     if(request.form.get('bio') != None):
         bio = request.form.get('bio')
     if(request.form.get('link') != None):
@@ -250,10 +255,10 @@ def update_user_data(user_id=None):
         cursor = connection.cursor()
 
         # 更新
-        cursor.execute('UPDATE userdata SET name = %s, email = %s, icon = %s, bio = %s, link = %s WHERE user_id = %s', (name, email, icon, bio, link, user_id))
+        cursor.execute('UPDATE userdata SET name = %s, email = %s, icon = %s, password = %s, bio = %s, link = %s WHERE user_id = %s', (name, email, icon, password, bio, link, user_id))
 
         connection.commit()
-        return ReturnJson.ok('更新が完了しました。', {'user_id': user_id, 'name': name, 'email': email, 'icon': icon, 'bio': bio, 'link': link})
+        return ReturnJson.ok('更新が完了しました。', {})
 
     except Exception as e:
         print(e)
@@ -304,7 +309,7 @@ def delete_account(user_id=None):
 
 # トークン認証
 @app.route('/api/check_token/<string:user_id>', methods=['POST'])
-def auth(user_id=None):
+def check_token(user_id=None):
     if(user_id == None):
         return ReturnJson.err('URLが不正です。')
 
@@ -316,6 +321,39 @@ def auth(user_id=None):
         return ReturnJson.err('トークンが不正です。')
 
     return ReturnJson.ok('トークンの有効性が認められました。', {'user_id': user_id, 'token': token})
+
+# アイコンを取得
+@app.route('/api/get_icon/<string:user_id>', methods=['GET'])
+def get_icon(user_id=None):
+    if(user_id == None):
+        return ReturnJson.err('URLが不正です。')
+
+    try:
+        connection = pymysql.connect(host=config.db_host,
+                                    port=config.db_port,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4',
+                                    cursorclass=pymysql.cursors.DictCursor)
+        cursor = connection.cursor()
+
+        # user_idの存在確認
+        cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
+
+        result = cursor.fetchall()
+        if len(result[0]["user_id"]) == 0:
+            return ReturnJson.err('このユーザーは登録されていません。')
+        else:
+            # アイコンがあれば返す
+            if result[0]["icon"] != None:
+                # 画像をバイナリで返す
+                return send_file('./static/icon/' + result[0]["icon"], mimetype='image/jpeg')
+            else:
+                return ReturnJson.err('このユーザーはアイコンを登録していません。')
+    except Exception as e:
+        print(e)
+        return ReturnJson.err('内部でエラーが発生しました。')
 
 if __name__ == "__main__":
     app.run(debug=True, host='127.0.0.1', port=5000)
