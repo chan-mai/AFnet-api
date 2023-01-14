@@ -187,8 +187,8 @@ def update_user_data(user_id=None):
         cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
 
         result = cursor.fetchall()
-        if result[0]["user_id"] == None:
-            return ReturnJson.err('このユーザーIDは登録されていません。')
+        if len(result) == 0:
+            return ReturnJson.err('このユーザーは登録されていません。')
         else:
             name = result[0]["name"]
             email = result[0]["email"]
@@ -221,6 +221,7 @@ def update_user_data(user_id=None):
             cursor.execute('SELECT * FROM userdata WHERE email = %s LIMIT 1', (email))
 
             result = cursor.fetchall()
+            connection.close()
             if result[0]["email"] != None:
                 return ReturnJson.err('このメールアドレスは既に登録されています。')
         except Exception as e:
@@ -258,7 +259,48 @@ def update_user_data(user_id=None):
         print(e)
         return ReturnJson.err('内部でエラーが発生しました。')
 
+# アカウントの削除
+@app.route('/api/delete_account/<string:user_id>', methods=['POST'])
+def delete_account(user_id=None):
+    if(user_id == None):
+        return ReturnJson.err('URLが不正です。')
 
+    # tokenの確認
+    token = request.form.get('token')
+    if token == None:
+        return ReturnJson.err('トークンが不正です。')
+    if Token.check(user_id, token) == False:
+        return ReturnJson.err('トークンが不正です。')
+
+    try:
+        connection = pymysql.connect(host=config.db_host,
+                                    port=config.db_port,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4',
+                                    cursorclass=pymysql.cursors.DictCursor)
+        cursor = connection.cursor()
+
+        # user_idの存在確認
+        cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
+
+        result = cursor.fetchall()
+        if result[0]["user_id"] == None:
+            return ReturnJson.err('このユーザーは登録されていません。')
+        else:
+            # 削除
+            cursor.execute('DELETE FROM userdata WHERE user_id = %s', (user_id))
+            connection.commit()
+            # アイコンがあれば削除
+            if result[0]["icon"] != None:
+                os.remove('./static/icon/' + result[0]["icon"])
+            # トークンを削除
+            Token.delete(user_id)
+            return ReturnJson.ok('アカウントの削除が完了しました。', {'user_id': user_id})
+    except Exception as e:
+        print(e)
+        return ReturnJson.err('内部でエラーが発生しました。')
 
 if __name__ == "__main__":
     app.run(debug=True, host='127.0.0.1', port=5000)
