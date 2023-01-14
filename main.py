@@ -74,3 +74,6 @@ def account_add():
 
     except:
         return ReturnJson.err('内部でエラーが発生しました。')
+
+if __name__ == "__main__":
+    app.run()
