@@ -3,24 +3,26 @@ import uuid
 from return_json import ReturnJson
 from config import config
 import hashlib
-import MySQLdb
+import os
+import pymysql
+import re
 
 app = Flask(__name__)
 
 # アカウント作成
-@app.route('/account_add', methods=['POST'])
+@app.route('/api/account_add', methods=['POST'])
 def account_add():
     # ユーザー名z
-    username = request.form.get('username')
+    name = request.form.get('name')
     # メール
     email = request.form.get('email')
     # パスワード
     password = request.form.get('password')
 
-    print(username, email, password)
+    print(name, email, password)
 
     # パラメータのチェック
-    if username == None or email == None or password == None:
+    if name == None or email == None or password == None:
         return ReturnJson.err('パラメータが不正です。')
 
     # パスワードのハッシュ化
@@ -30,7 +32,7 @@ def account_add():
 
 
     # メールアドレスの有効性を確認
-    if email.find('@') == -1:
+    if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
         return ReturnJson.err('メールアドレスが不正です。')
     
     # パスワードの長さを確認
@@ -38,53 +40,212 @@ def account_add():
         return ReturnJson.err('パスワードが長すぎます。')
     
     # ユーザー名の長さを確認
-    if len(username) >= 255:
+    if len(name) >= 255:
         return ReturnJson.err('ユーザー名が長すぎます。')
     
     try:
-        connection = MySQLdb.connect(
-                    host=config.db_host,
-                    port=3307,
-                    user=config.db_user,
-                    passwd=config.db_pass,
-                    db='afnet_account')
+        connection = pymysql.connect(host=config.db_host,
+                                    port=3307,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    cursorclass=pymysql.cursors.DictCursor,
+                                    charset='utf8mb4')
         cursor = connection.cursor()
         
         # メールアドレスが既に登録されているか確認
         cursor.execute('SELECT * FROM userdata WHERE email = %s', (email,))
-        if cursor.fetchone() != "":
-            return ReturnJson.err('このメールアドレスは既に登録されています。')
+
+        connection.commit()
+        connection.close()
+        
+        result = cursor.fetchall()
+        if len(result) > 0:
+            return ReturnJson.err('メールアドレスが既に登録されています。')
+
+        connection = pymysql.connect(host=config.db_host,
+                                    port=3307,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4')
+        cursor = connection.cursor()
+        
+        # 保存
+        cursor.execute('INSERT INTO userdata (user_id, name, email, password) VALUES (%s, %s, %s, %s)', (user_id, name, email, password_hash))
         
         connection.commit()
         connection.close()
+
+        return ReturnJson.ok('アカウントを作成しました。', {'user_id': user_id})
+
     
     except Exception as e:
         print(e)
         return ReturnJson.err('内部でエラーが発生しました。')
 
-    finally:    
+# ログイン
+@app.route('/api/login', methods=['POST'])
+def login():
+    # メール
+    email = request.form.get('email')
+    # パスワード
+    password = request.form.get('password')
+
+    # パラメータのチェック
+    if email == None or password == None:
+        return ReturnJson.err('パラメータが不正です。')
+
+    # パスワードのハッシュ化
+    password_hash = hashlib.sha256(password.encode()).hexdigest()
+
+    try:
+        connection = pymysql.connect(host=config.db_host,
+                                    port=3307,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4',
+                                    cursorclass=pymysql.cursors.DictCursor)
+        cursor = connection.cursor()
+        
+        # メールアドレスがの存在確認
+        cursor.execute('SELECT * FROM userdata WHERE email = %s LIMIT 1', (email))
+
+        result = cursor.fetchall()
+        if result[0]["email"] == None:
+            return ReturnJson.err('このメールアドレスは登録されていません。')
+        else:
+            if(result[0]["password"] != password_hash):
+                return ReturnJson.err('パスワードが違います。')
+            else:
+                return ReturnJson.ok('ログインしました。', {'user_id': result[0]["user_id"], 'name': result[0]["name"], 'email': result[0]["email"]})
+    
+    except Exception as e:
+        print(e)
+        return ReturnJson.err('内部でエラーが発生しました。')
+
+# ユーザー情報の取得
+@app.route('/api/get_user_data/<string:user_id>', methods=['GET'])
+def get_user_data(user_id=None):
+    if user_id == None:
+        return ReturnJson.err('URLが不正です。')
+    try:
+        connection = pymysql.connect(host=config.db_host,
+                                    port=3307,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4',
+                                    cursorclass=pymysql.cursors.DictCursor)
+        cursor = connection.cursor()
+        
+        # ユーザーIDがの存在確認
+        cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
+
+        result = cursor.fetchall()
+        if result[0]["user_id"] == None:
+            return ReturnJson.err('このユーザーIDは登録されていません。')
+        else:
+            return ReturnJson.ok('取得が完了しました。', {'user_id': result[0]["user_id"], 'name': result[0]["name"], 'email': result[0]["email"], 'icon': result[0]["icon"], 'bio': result[0]["bio"], 'link': result[0]["link"]})
+    
+    except Exception as e:
+        print(e)
+        return ReturnJson.err('内部でエラーが発生しました。')
+
+# ユーザー情報の更新
+@app.route('/api/update_user_data/<string:user_id>', methods=['POST'])
+def update_user_data(user_id=None):
+    if(user_id == None):
+        return ReturnJson.err('URLが不正です。')
+
+    # 現在のユーザー情報の取得
+    try:
+        connection = pymysql.connect(host=config.db_host,
+                                    port=3307,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4',
+                                    cursorclass=pymysql.cursors.DictCursor)
+        cursor = connection.cursor()
+
+        # ユーザーIDがの存在確認
+        cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
+
+        result = cursor.fetchall()
+        if result[0]["user_id"] == None:
+            return ReturnJson.err('このユーザーIDは登録されていません。')
+        else:
+            name = result[0]["name"]
+            email = result[0]["email"]
+            icon = result[0]["icon"]
+            bio = result[0]["bio"]
+            link = result[0]["link"]
+    except Exception as e:
+        print(e)
+        return ReturnJson.err('内部でエラーが発生しました。')
+    
+    # パラメータの取得
+    if(request.form.get('name') != None):
+        name = request.form.get('name')
+    if(request.form.get('email') != None):
+        # メールアドレスの有効性確認
+        if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', request.form.get('email')):
+            return ReturnJson.err('メールアドレスの形式が不正です。')
+        # メールアドレスの重複確認
         try:
-            connection = MySQLdb.connect(
-                        host=config.db_host,
-                        port=3307,
-                        user=config.db_user,
-                        passwd=config.db_pass,
-                        db='afnet_account')
+            connection = pymysql.connect(host=config.db_host,
+                                        port=3307,
+                                        user=config.db_user,
+                                        password=config.db_pass,
+                                        db='afnet_account',
+                                        charset='utf8mb4',
+                                        cursorclass=pymysql.cursors.DictCursor)
             cursor = connection.cursor()
             
-            # 保存
-            cursor.execute('INSERT INTO userdata (user_id, name, email, password) VALUES (%s, %s, %s, %s)', (user_id, email, username, password_hash))
-            
-            connection.commit()
-            connection.close()
+            # メールアドレスがの存在確認
+            cursor.execute('SELECT * FROM userdata WHERE email = %s LIMIT 1', (email))
 
+            result = cursor.fetchall()
+            if result[0]["email"] != None:
+                return ReturnJson.err('このメールアドレスは既に登録されています。')
         except Exception as e:
             print(e)
             return ReturnJson.err('内部でエラーが発生しました。')
+        email = request.form.get('email')
+    if(request.form.get('bio') != None):
+        bio = request.form.get('bio')
+    if(request.form.get('link') != None):
+        link = request.form.get('link')
+    # ファイルがあれば更新
+    file = request.files['icon_img']
+    if(file != None):
+        # user_id.ext
+        file.save(os.path.join('./static/icon', user_id + os.path.splitext(file.filename)[1]))
+        icon = user_id + os.path.splitext(file.filename)[1]
 
-        
-        finally:
-            return ReturnJson.ok('アカウントを作成しました。', {'user_id': user_id, 'username': username, 'email': email})
+    try:
+        connection = pymysql.connect(host=config.db_host,
+                                    port=3307,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4',
+                                    cursorclass=pymysql.cursors.DictCursor)
+        cursor = connection.cursor()
+
+        # 更新
+        cursor.execute('UPDATE userdata SET name = %s, email = %s, icon = %s, bio = %s, link = %s WHERE user_id = %s', (name, email, icon, bio, link, user_id))
+
+        connection.commit()
+        return ReturnJson.ok('更新が完了しました。', {'user_id': user_id, 'name': name, 'email': email, 'icon': icon, 'bio': bio, 'link': link})
+
+    except Exception as e:
+        print(e)
+        return ReturnJson.err('内部でエラーが発生しました。')
+
+
 
 if __name__ == "__main__":
     app.run(debug=True, host='127.0.0.1', port=5000)
