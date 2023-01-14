@@ -1,18 +1,19 @@
 from flask import *
 import uuid
-from return_json import ReturnJson
+from util.return_json import ReturnJson
 from config import config
 import hashlib
 import os
 import pymysql
 import re
+from util.token import Token
 
 app = Flask(__name__)
 
 # アカウント作成
 @app.route('/api/account_add', methods=['POST'])
 def account_add():
-    # ユーザー名z
+    # ユーザー名
     name = request.form.get('name')
     # メール
     email = request.form.get('email')
@@ -45,7 +46,7 @@ def account_add():
     
     try:
         connection = pymysql.connect(host=config.db_host,
-                                    port=3307,
+                                    port=config.db_port,
                                     user=config.db_user,
                                     password=config.db_pass,
                                     db='afnet_account',
@@ -64,7 +65,7 @@ def account_add():
             return ReturnJson.err('メールアドレスが既に登録されています。')
 
         connection = pymysql.connect(host=config.db_host,
-                                    port=3307,
+                                    port=config.db_port,
                                     user=config.db_user,
                                     password=config.db_pass,
                                     db='afnet_account',
@@ -77,7 +78,10 @@ def account_add():
         connection.commit()
         connection.close()
 
-        return ReturnJson.ok('アカウントを作成しました。', {'user_id': user_id})
+        # トークンの生成
+        token = str(Token.create(user_id))
+
+        return ReturnJson.ok('アカウントを作成しました。', {'user_id': user_id, 'token': token})
 
     
     except Exception as e:
@@ -101,7 +105,7 @@ def login():
 
     try:
         connection = pymysql.connect(host=config.db_host,
-                                    port=3307,
+                                    port=config.db_port,
                                     user=config.db_user,
                                     password=config.db_pass,
                                     db='afnet_account',
@@ -119,7 +123,9 @@ def login():
             if(result[0]["password"] != password_hash):
                 return ReturnJson.err('パスワードが違います。')
             else:
-                return ReturnJson.ok('ログインしました。', {'user_id': result[0]["user_id"], 'name': result[0]["name"], 'email': result[0]["email"]})
+                # トークンの生成
+                token = Token.create(result[0]["user_id"])
+                return ReturnJson.ok('ログインしました。', {'user_id': result[0]["user_id"], 'name': result[0]["name"], 'email': result[0]["email"], 'token': token})
     
     except Exception as e:
         print(e)
@@ -132,7 +138,7 @@ def get_user_data(user_id=None):
         return ReturnJson.err('URLが不正です。')
     try:
         connection = pymysql.connect(host=config.db_host,
-                                    port=3307,
+                                    port=config.db_port,
                                     user=config.db_user,
                                     password=config.db_pass,
                                     db='afnet_account',
@@ -159,10 +165,17 @@ def update_user_data(user_id=None):
     if(user_id == None):
         return ReturnJson.err('URLが不正です。')
 
+    # tokenの確認
+    token = request.form.get('token')
+    if token == None:
+        return ReturnJson.err('トークンが不正です。')
+    if Token.check(user_id, token) == False:
+        return ReturnJson.err('トークンが不正です。')
+
     # 現在のユーザー情報の取得
     try:
         connection = pymysql.connect(host=config.db_host,
-                                    port=3307,
+                                    port=config.db_port,
                                     user=config.db_user,
                                     password=config.db_pass,
                                     db='afnet_account',
@@ -196,7 +209,7 @@ def update_user_data(user_id=None):
         # メールアドレスの重複確認
         try:
             connection = pymysql.connect(host=config.db_host,
-                                        port=3307,
+                                        port=config.db_port,
                                         user=config.db_user,
                                         password=config.db_pass,
                                         db='afnet_account',
@@ -227,7 +240,7 @@ def update_user_data(user_id=None):
 
     try:
         connection = pymysql.connect(host=config.db_host,
-                                    port=3307,
+                                    port=config.db_port,
                                     user=config.db_user,
                                     password=config.db_pass,
                                     db='afnet_account',
