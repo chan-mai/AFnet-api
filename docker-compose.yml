@@ -8,3 +8,4 @@ services:
     tty: true
     volumes:
       - ./opt:/opt/api
+      - ./static:/mnt/data
