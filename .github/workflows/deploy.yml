@@ -15,12 +15,9 @@ jobs:
       - name: copy files
         run: |
           cp -f -r ./AFnet-api/* /opt/AFnet-api/
-      - name: change dic
-        run: |
-          cd /opt/AFnet-api/
       - name: docker-compose build
         run: |
-          docker-compose up -d --build
+          docker-compose up -f /opt/AFnet-api/docker-compose.yml -d --build
       - name: delete files
         run: |
           rm -rf ./AFnet-api
