@@ -5,7 +5,7 @@ from util.return_json import ReturnJson
 from config import config
 import hashlib
 import os
-import pymysql
+import pymysql.cursors
 import re
 from util.token import Token
 
