@@ -14,10 +14,13 @@ jobs:
           git clone https://github.com/chan-mai/AFnet-api
       - name: copy files
         run: |
-          cp -f ./AFnet-api/* /opt/AFnet-api/
+          cp -f -r ./AFnet-api/* /opt/AFnet-api/
       - name: change dic
         run: |
           cd /opt/AFnet-api/
       - name: docker-compose build
         run: |
           docker-compose up -d --build
+      - name: delete files
+        run: |
+          rm -rf ./AFnet-api
