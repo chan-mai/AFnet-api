@@ -169,10 +169,15 @@ def get_user_data(user_id=None):
         return ReturnJson.err('内部でエラーが発生しました。')
 
 # emailの取得
-@app.route('/api/get_email/<string:user_id>', methods=['GET'])
+@app.route('/api/get_email/<string:user_id>', methods=['POST'])
 def get_email(user_id=None):
     if user_id == None:
         return ReturnJson.err('URLが不正です。')
+    token = request.form.get('token')
+    if token == None:
+        return ReturnJson.err('トークンが不正です。')
+    if Token.check(user_id, token) == False:
+        return ReturnJson.err('トークンが不正です。')
     try:
         connection = pymysql.connect(host=config.db_host,
                                     port=config.db_port,
