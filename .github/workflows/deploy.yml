@@ -17,7 +17,7 @@ jobs:
           cp -f -r ./AFnet-api/* /opt/AFnet-api/
       - name: docker-compose build
         run: |
-          docker-compose up -f /opt/AFnet-api/docker-compose.yml -d --build
+          docker-compose -f /opt/AFnet-api/docker-compose.yml -f /opt/AFnet-api/docker-compose.ymlup -d --build
       - name: delete files
         run: |
           rm -rf ./AFnet-api
