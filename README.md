@@ -140,7 +140,7 @@
         + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d(string, required) - アクセストークン
 
 
-### ユーザーのプロフィール取得 - /api/check_token/\<string:user_id> [GET]
+### ユーザーのプロフィール取得 - /api/get_user_data/\<string:user_id> [GET]
 #### 処理概要
 
 * 指定されたuser_idに該当するもののうちプロフィールとして表示できるものに限り取得。
