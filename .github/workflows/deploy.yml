@@ -1,0 +1,21 @@
+name: Auto deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - run: |
+          cd /opt
+      - name: repo clone
+        run: |
+          git clone https://github.com/chan-mai/AFnet-api
+      - run: |
+          /opt/AFnet-api
+      - name: docker-compose build
+        run: |
+          docker-compose up -d --build
