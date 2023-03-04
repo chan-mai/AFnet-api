@@ -191,7 +191,7 @@ def update_user_data(user_id=None):
             return ReturnJson.err('このユーザーは登録されていません。')
         else:
             name = result[0]["name"]
-            name = result[0]["password"]
+            password = result[0]["password"]
             email = result[0]["email"]
             icon = result[0]["icon"]
             bio = result[0]["bio"]
