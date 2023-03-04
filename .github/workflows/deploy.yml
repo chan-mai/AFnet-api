@@ -6,7 +6,7 @@ on:
       - master
 
 jobs:
-  deploy:
+  data-sync:
     runs-on: self-hosted
     steps:
       - name: repo clone
@@ -15,6 +15,10 @@ jobs:
       - name: copy files
         run: |
           cp -f -r ./AFnet-api/* /opt/AFnet-api/
+  
+  deploy:
+    runs-on: self-hosted
+    steps:
       - name: docker-compose build
         run: |
           docker-compose -f /opt/AFnet-api/docker-compose.yml up -d --build
