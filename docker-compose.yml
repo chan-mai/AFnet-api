@@ -9,5 +9,5 @@ services:
     ports:
       - "80:80"
     volumes:
-      - /opt/api/src/:/api
+      - ./src/:/api
       - /mnt/data:/api/static/
