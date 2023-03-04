@@ -1,0 +1,30 @@
+name: Auto deploy
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  data-sync:
+    name: Synchronization of the latest
+    runs-on: self-hosted
+    steps:
+      - name: repo clone
+        run: |
+          git clone https://github.com/chan-mai/AFnet-api
+      - name: copy files
+        run: |
+          cp -f -r ./AFnet-api/* /opt/AFnet-api/
+  
+  deploy:
+    name: Deploy
+    needs: data-sync
+    runs-on: self-hosted
+    steps:
+      - name: docker-compose build
+        run: |
+          docker-compose -f /opt/AFnet-api/docker-compose.yml up -d --build
+      - name: delete files
+        run: |
+          rm -rf ./AFnet-api
