@@ -168,6 +168,34 @@ def get_user_data(user_id=None):
         print(e)
         return ReturnJson.err('内部でエラーが発生しました。')
 
+# emailの取得
+@app.route('/api/get_email/<string:user_id>', methods=['GET'])
+def get_email(user_id=None):
+    if user_id == None:
+        return ReturnJson.err('URLが不正です。')
+    try:
+        connection = pymysql.connect(host=config.db_host,
+                                    port=config.db_port,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4',
+                                    cursorclass=pymysql.cursors.DictCursor)
+        cursor = connection.cursor()
+        
+        # ユーザーIDがの存在確認
+        cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
+
+        result = cursor.fetchall()
+        if result[0]["user_id"] == None:
+            return ReturnJson.err('このユーザーは登録されていません。')
+        else:
+            return ReturnJson.ok('取得が完了しました。', {'email': result[0]["email"]})
+    
+    except Exception as e:
+        print(e)
+        return ReturnJson.err('内部でエラーが発生しました。')
+
 # ユーザー情報の更新
 @app.route('/api/update_user_data/<string:user_id>', methods=['POST'])
 def update_user_data(user_id=None):
