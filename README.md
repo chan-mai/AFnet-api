@@ -58,7 +58,7 @@
         + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d(string, required) - アクセストークン
 
 
-### ユーザ情報の更新 - update_user_data/\<string:user_id> [POST]
+### ユーザ情報の更新 - /api/update_user_data/\<string:user_id> [POST]
 #### 処理概要
 
 * 既存ユーザ情報を更新する。
@@ -70,7 +70,6 @@
             Accept: application/json
 
     + Attributes
-        + user_id: 6708cb5e-9a9e-4fc7-b8ba-552c892e1fb7 (string, required) - 割り当てられたuser_id
         + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d (string, required) - アクセストークン
         + name: hogehoge (string) - 変更後のユーザー名
         + email: example@example.com (string) - メールアドレス（format: email）
@@ -85,7 +84,7 @@
         ok (string, required)
         + message:
         example (string. required)
-  
+
 
 ### ユーザー情報の消去 - /api/delete_account/\<string:user_id> [POST]
 #### 処理概要
@@ -100,7 +99,6 @@
             Accept: application/json
 
     + Attributes
-        + user_id: 6708cb5e-9a9e-4fc7-b8ba-552c892e1fb7 (string, required) - 割り当てられたuser_id
         + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d (string, required) - アクセストークン
 
 + Response 201 (application/json)
@@ -126,7 +124,6 @@
             Accept: application/json
 
     + Attributes
-        + user_id: 6708cb5e-9a9e-4fc7-b8ba-552c892e1fb7 (string, required) - 割り当てられたuser_id
         + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d (string, required) - アクセストークン
 
 + Response 201 (application/json)
@@ -165,6 +162,26 @@
         + name: hogehoge (string) - ユーザー名
         + bio: example-user (string) - ユーザー概要
         + link: https://example.com (string) - 関連リンク (format: url)
+
+### ユーザーのEmail取得 - /api/get_email/\<string:user_id> [GET]
+#### 処理概要
+
+* 指定されたuser_idに該当するemailを取得。
+
++ Request (application/json)
+
+    + Headers
+
+            Accept: application/json
+
+    + Attributes
+        + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d (string, required) - アクセストークン
+
++ Response 201 (application/json)
+    + Attributes
+        + status:
+        ok (string, required)
+        + email: example@example.com (string) - メールアドレス（format: email）
 
 ### ユーザーのプロフィールアイコン取得 - /api/get_icon/\<string:user_id> [GET]
 #### 処理概要
