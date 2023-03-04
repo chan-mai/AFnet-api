@@ -7,6 +7,7 @@ on:
 
 jobs:
   data-sync:
+    name: Synchronization of the latest
     runs-on: self-hosted
     steps:
       - name: repo clone
@@ -17,6 +18,8 @@ jobs:
           cp -f -r ./AFnet-api/* /opt/AFnet-api/
   
   deploy:
+    name: Deploy
+    needs: data-sync
     runs-on: self-hosted
     steps:
       - name: docker-compose build
