@@ -4,7 +4,10 @@ services:
     restart: always
     build: .
     container_name: 'AFnet-api-server'
-    working_dir: '/opt/api/'
+    working_dir: '/opt/'
     tty: true
+    ports:
+      - "80:80"
     volumes:
-      - ./opt:/opt/api
+      - /opt/api/src/:/opt
+      - /mnt/data:/opt/static/
