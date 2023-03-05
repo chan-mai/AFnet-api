@@ -80,7 +80,10 @@ class Token():
         return token
 
     # トークンの有効性確認
-    def check(user_id, token):
+    def check(user_id=None, token=None):
+        if user_id is None or token is None:
+            return False
+        
         connection = pymysql.connect(host=config.db_host,
                                     port=config.db_port,
                                     user=config.db_user,
@@ -90,7 +93,7 @@ class Token():
                                     cursorclass=pymysql.cursors.DictCursor)
         cursor = connection.cursor()
         
-        # トークンをデータベースに登録
+        # user_idとtokenが一致するか確認
         cursor.execute('SELECT * FROM token WHERE user_id = %s', (user_id))
         
         connection.commit()

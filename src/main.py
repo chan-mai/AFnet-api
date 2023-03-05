@@ -356,17 +356,39 @@ def check_token(user_id=None):
     if(user_id == None):
         isFaild = True
         return ReturnJson.err('URLが不正です。')
-    # tokenの確認
-    token = request.form.get('token')
-    if token == None:
-        isFaild = True
-        return ReturnJson.err('トークンが不正です。')
-    if Token.check(user_id, token) == False:
-        isFaild = True
-        return ReturnJson.err('トークンが不正です。')
 
-    if isFaild == False:
-        return ReturnJson.ok('トークンの有効性が認められました。', {'user_id': user_id, 'token': token})
+    try:
+        connection = pymysql.connect(host=config.db_host,
+                                    port=config.db_port,
+                                    user=config.db_user,
+                                    password=config.db_pass,
+                                    db='afnet_account',
+                                    charset='utf8mb4',
+                                    cursorclass=pymysql.cursors.DictCursor)
+        cursor = connection.cursor()
+
+        # user_idの存在確認
+        cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
+
+        result = cursor.fetchall()
+        if result[0]["user_id"] == None:
+            return ReturnJson.err('このユーザーは登録されていません。')
+        else:
+            # tokenの確認
+            token = request.form.get('token')
+            if token == None:
+                isFaild = True
+                return ReturnJson.err('トークンが不正です。')
+                
+            if Token.check(user_id, token) == False:
+                isFaild = True
+                return ReturnJson.err('トークンが不正です。')
+
+            if isFaild == False:
+                return ReturnJson.ok('トークンの有効性が認められました。', {'user_id': user_id, 'token': token})
+    except Exception as e:
+        print(e)
+        return ReturnJson.err('内部でエラーが発生しました。')
 
 # アイコンを取得
 @app.route('/api/get_icon/<string:user_id>', methods=['GET'])
