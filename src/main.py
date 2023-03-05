@@ -282,7 +282,7 @@ def update_user_data(user_id=None):
         link = request.form.get('link')
         update['link'] = link
     # ファイルがあれば更新
-    if request.files['icon_img'] != None:
+    if 'icon_img' in request.files:
         file = request.files['icon_img']
         # user_id.ext
         file.save(os.path.join('./static/icon', user_id + os.path.splitext(file.filename)[1]))
