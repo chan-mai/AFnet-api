@@ -238,9 +238,12 @@ def update_user_data(user_id=None):
         print(e)
         return ReturnJson.err('内部でエラーが発生しました。')
     
+    update = {}
+
     # パラメータの取得
     if(request.form.get('name') != None):
         name = request.form.get('name')
+        update['name'] = name
     if(request.form.get('email') != None):
         # メールアドレスの有効性確認
         if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', request.form.get('email')):
@@ -267,20 +270,24 @@ def update_user_data(user_id=None):
             print(e)
             return ReturnJson.err('内部でエラーが発生しました。')
         email = request.form.get('email')
+        update['email'] = email
     if(request.form.get('password') != None):
         _password = request.form.get('password')
         # ハッシュ化
         password = hashlib.sha256(_password.encode()).hexdigest()
     if(request.form.get('bio') != None):
         bio = request.form.get('bio')
+        update['bio'] = bio
     if(request.form.get('link') != None):
         link = request.form.get('link')
+        update['link'] = link
     # ファイルがあれば更新
-    file = request.files['icon_img']
-    if(file != None):
+    if  'file' in request.files:
+        file = request.files['icon_img']
         # user_id.ext
         file.save(os.path.join('./static/icon', user_id + os.path.splitext(file.filename)[1]))
         icon = user_id + os.path.splitext(file.filename)[1]
+        update['icon'] = icon
 
     try:
         connection = pymysql.connect(host=config.db_host,
@@ -296,7 +303,7 @@ def update_user_data(user_id=None):
         cursor.execute('UPDATE userdata SET name = %s, email = %s, icon = %s, password = %s, bio = %s, link = %s WHERE user_id = %s', (name, email, icon, password, bio, link, user_id))
 
         connection.commit()
-        return ReturnJson.ok('更新が完了しました。', {})
+        return ReturnJson.ok('更新が完了しました。', update)
 
     except Exception as e:
         print(e)
