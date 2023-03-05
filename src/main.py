@@ -10,14 +10,10 @@ import re
 from util.token import Token
 
 app = Flask(__name__)
-CORS(app)
-
-@app.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
+CORS(
+    app,
+    supports_credentials=True
+    )
 
 # アカウント作成
 @app.route('/api/account_add', methods=['POST'])
