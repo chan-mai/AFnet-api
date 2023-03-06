@@ -71,11 +71,9 @@ class Token():
     # トークンの再発行
     def renew(user_id):
         # トークンの削除
-        token.delete_token(user_id)
+        Token.delete(user_id)
         # トークンの生成 user_id + timestamp
-        timestamp = time.time()
-        _token = user_id + str(timestamp)
-        token = hashlib.sha256(_token.encode()).hexdigest()
+        token = Token.create(user_id)
         
         return token
 
@@ -100,6 +98,10 @@ class Token():
         connection.close()
         
         result = cursor.fetchall()
+
+        if len(result) == 0:
+            return False
+
         for row in result:
             if row['user_id'] == user_id and row['token'] == token:
                 return True
