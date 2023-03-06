@@ -136,6 +136,31 @@
         6708cb5e-9a9e-4fc7-b8ba-552c892e1fb7 (string, required) - user_id
         + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d(string, required) - アクセストークン
 
+### Tokenの再発行 - /api/renew_token/\<string:user_id> [GET]
+#### 処理概要
+
+* 指定されたuser_idに該当するemailを取得。
+
++ Request (application/json)
+
+    + Headers
+
+            Accept: application/json
+
+    + Attributes
+        + token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d (string, required) - アクセストークン
+
++ Response 201 (application/json)
+    + Attributes
+        + status:
+        ok (string, required)
+        + message:
+        example (string. required)
+        + user_id:
+        6708cb5e-9a9e-4fc7-b8ba-552c892e1fb7 (string, required) - user_id
+        + new_token: ebe38d50d77639d29a3521e21e4f0a75ed6872fbae56639cc0e02fc99517d48d(string, required) - 再発行後のアクセストークン
+        + old_token: 639cc2fbae565121e21e4f0e02fc77763d50d75ed6870ad489d29a3599ebe38d(string, required) - 再発行前のアクセストークン
+
 
 ### ユーザーのプロフィール取得 - /api/get_user_data/\<string:user_id> [GET]
 #### 処理概要
@@ -181,6 +206,8 @@
     + Attributes
         + status:
         ok (string, required)
+        + message:
+        example (string. required)
         + email: example@example.com (string) - メールアドレス（format: email）
 
 ### ユーザーのプロフィールアイコン取得 - /api/get_icon/\<string:user_id> [GET]

@@ -426,5 +426,22 @@ def get_icon(user_id=None):
         print(e)
         return ReturnJson.err('内部でエラーが発生しました。')
 
+# トークンの再発行
+@app.route('/api/renew_token/<string:user_id>', methods=['POST'])
+def renew_token(user_id=None):
+    token = request.form.get('token')
+    if user_id == None or token == None:
+        return ReturnJson.err('URLが不正です。')
+    
+    # tokenの確認
+    if Token.check(user_id, token) == False:
+        return ReturnJson.err('不正なパラメータです。')
+
+    # 再発行
+    new_token = Token.renew(user_id)
+
+    return ReturnJson.ok('トークンの再発行が完了しました。', {'user_id': user_id, 'new_token': new_token, 'old_token': token})
+    
+
 if __name__ == "__main__":
     app.run(debug=False, host='0.0.0.0', port=80)
