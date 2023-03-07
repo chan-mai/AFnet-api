@@ -44,8 +44,16 @@ def account_add():
     # パスワードの長さを確認
     if len(password) >= 255:
         return ReturnJson.err('パスワードが長すぎます。')
+
+    # パスワードは英数字のみ
+    match = '^[a-zA-Z0-9]+$'
+    if not re.match(match, password):
+        return ReturnJson.err('パスワードは英数字のみ使用可能です。')
     
     # ユーザー名の長さを確認
+    if len(name) <= 4:
+        return ReturnJson.err('ユーザー名が短すぎます。')
+    
     if len(name) >= 255:
         return ReturnJson.err('ユーザー名が長すぎます。')
     
@@ -79,13 +87,11 @@ def account_add():
         
         # 保存
         cursor.execute('INSERT INTO userdata (user_id, name, email, password) VALUES (%s, %s, %s, %s)', (user_id, name, email, password_hash))
-        
         connection.commit()
         connection.close()
 
         # トークンの生成
         token = str(Token.create(user_id))
-
         return ReturnJson.ok('アカウントを作成しました。', {'user_id': user_id, 'token': token})
 
     
@@ -155,7 +161,7 @@ def get_user_data(user_id=None):
         cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
 
         result = cursor.fetchall()
-        if result[0]["user_id"] == None:
+        if result[0]["user_id"] == None or len(result) == 0:
             return ReturnJson.err('このユーザーIDは登録されていません。')
         else:
             return ReturnJson.ok('取得が完了しました。', {'user_id': result[0]["user_id"], 'name': result[0]["name"], 'icon': result[0]["icon"], 'bio': result[0]["bio"], 'link': result[0]["link"]})
@@ -272,6 +278,10 @@ def update_user_data(user_id=None):
         email = request.form.get('email')
         update['email'] = email
     if(request.form.get('password') != None):
+        if len(request.form.get('password')) < 6:
+            return ReturnJson.err('パスワードは6文字以上で入力してください。')
+        if re.match(r'^[a-zA-Z0-9]+$', request.form.get('password')):
+            return ReturnJson.err('パスワードは半角英数字で入力してください。')
         _password = request.form.get('password')
         # ハッシュ化
         password = hashlib.sha256(_password.encode()).hexdigest()
@@ -374,7 +384,7 @@ def check_token(user_id=None):
         cursor.execute('SELECT * FROM userdata WHERE user_id = %s LIMIT 1', (user_id))
 
         result = cursor.fetchall()
-        if result[0]["user_id"] == None:
+        if result[0]["user_id"] == None or len(result) == 0 or result == None:
             return ReturnJson.err('このユーザーは登録されていません。')
         else:
             # tokenの確認
