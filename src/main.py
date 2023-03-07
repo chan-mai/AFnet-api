@@ -44,11 +44,6 @@ def account_add():
     # パスワードの長さを確認
     if len(password) >= 255:
         return ReturnJson.err('パスワードが長すぎます。')
-
-    # パスワードは英数字のみ
-    match = '^[a-zA-Z0-9.?/-]{8,24}$'
-    if not re.match(match, password):
-        return ReturnJson.err('パスワードは英数字のみ使用可能です。')
     
     # ユーザー名の長さを確認
     if len(name) <= 4:
