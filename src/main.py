@@ -46,7 +46,7 @@ def account_add():
         return ReturnJson.err('パスワードが長すぎます。')
 
     # パスワードは英数字のみ
-    match = '^[a-zA-Z0-9]+$'
+    match = '^[a-zA-Z0-9.?/-]{8,24}$'
     if not re.match(match, password):
         return ReturnJson.err('パスワードは英数字のみ使用可能です。')
     
